@@ -45,8 +45,6 @@ def fetch_tweets(username):
     # from pprint import pprint
     # print tweets
 
-    print len(tweets)
-
     driver = webdriver.PhantomJS()
 
     for tweet in tweets:
@@ -58,8 +56,13 @@ def fetch_tweets(username):
                     original_url = url['expanded_url'].encode('ascii', 'ignore')
                     driver.get(original_url)
                     driver.get_screenshot_as_file(filename)
+                    screenshot = Image.open(filename)
+                    cropped = screenshot.crop((0, 0, 1200, 800))
+                    cropped.save('screenshots/%s_cropped.png' % tweet['id'])
                 else:
                     print '%s already exits. Skipping.' % filename
+
+
 
 @task
 def update_featured_social():
