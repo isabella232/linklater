@@ -17,6 +17,7 @@ node_modules
 
 # Installer logs
 pip-log.txt
+ghostdriver.log
 
 # Unit test / coverage reports
 .coverage
