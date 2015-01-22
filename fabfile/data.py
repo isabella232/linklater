@@ -8,10 +8,14 @@ import json
 
 from fabric.api import task
 from facebook import GraphAPI
+from PIL import Image
 from twitter import Twitter, OAuth
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 
 import app_config
 import copytext
+import os
 
 @task(default=True)
 def update():
@@ -19,6 +23,43 @@ def update():
     Stub function for updating app-specific data.
     """
     #update_featured_social()
+
+@task
+def fetch_tweets(username):
+    """
+    Get tweets of a specific user
+    """
+    secrets = app_config.get_secrets()
+
+    twitter_api = Twitter(
+        auth=OAuth(
+            secrets['TWITTER_API_OAUTH_TOKEN'],
+            secrets['TWITTER_API_OAUTH_SECRET'],
+            secrets['TWITTER_API_CONSUMER_KEY'],
+            secrets['TWITTER_API_CONSUMER_SECRET']
+        )
+    )
+
+    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=20)
+
+    # from pprint import pprint
+    # print tweets
+
+    print len(tweets)
+
+    driver = webdriver.PhantomJS()
+
+    for tweet in tweets:
+        urls = tweet['entities']['urls']
+        if len(urls) > 0:
+            for url in urls:
+                filename = 'screenshots/%s.png' % tweet['id']
+                if not os.path.isfile(filename):
+                    original_url = url['expanded_url'].encode('ascii', 'ignore')
+                    driver.get(original_url)
+                    driver.get_screenshot_as_file(filename)
+                else:
+                    print '%s already exits. Skipping.' % filename
 
 @task
 def update_featured_social():
