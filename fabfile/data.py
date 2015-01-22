@@ -16,6 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 import app_config
 import copytext
 import os
+import urllib
 
 @task(default=True)
 def update():
@@ -40,29 +41,33 @@ def fetch_tweets(username):
         )
     )
 
-    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=20)
+    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=80)
 
     # from pprint import pprint
     # print tweets
 
+    file_extensions = ['gif', 'png', 'jpg', 'jpeg']
     driver = webdriver.PhantomJS()
 
     for tweet in tweets:
-        urls = tweet['entities']['urls']
+        urls = tweet['entities']['urls']   
+
         if len(urls) > 0:
             for url in urls:
-                filename = 'screenshots/%s.png' % tweet['id']
+                filename = 'previews/%s.png' % tweet['id']
+                original_url = url['expanded_url'].encode('ascii', 'ignore')   
+
                 if not os.path.isfile(filename):
-                    original_url = url['expanded_url'].encode('ascii', 'ignore')
-                    driver.get(original_url)
-                    driver.get_screenshot_as_file(filename)
-                    screenshot = Image.open(filename)
-                    cropped = screenshot.crop((0, 0, 1200, 800))
-                    cropped.save('screenshots/%s_cropped.png' % tweet['id'])
+                    if original_url.endswith(tuple(file_extensions)):
+                        urllib.urlretrieve(original_url, filename)
+                    else: 
+                        driver.get(original_url)
+                        driver.get_screenshot_as_file(filename)
+                        screenshot = Image.open(filename)
+                        cropped = screenshot.crop((0, 0, 1200, 800))
+                        cropped.save('previews/%s_cropped.png' % tweet['id'])
                 else:
                     print '%s already exits. Skipping.' % filename
-
-
 
 @task
 def update_featured_social():
