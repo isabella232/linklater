@@ -48,4 +48,4 @@ data/copy.xls
 data/copy.xlsx
 www/assets/*
 !www/assets/assetsignore
-screenshots
+previews
