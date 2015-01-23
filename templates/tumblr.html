@@ -1,0 +1,6 @@
+{% for link in links %}
+<p>
+<strong><a href="{{ link.url }}">{{ link.title }}</a></strong> - {{ link.tweet_text }} ({{ link.description }})
+</p>
+{% endfor %}
+
