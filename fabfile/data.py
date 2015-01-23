@@ -8,6 +8,7 @@ import json
 
 from fabric.api import task
 from facebook import GraphAPI
+from hypchat import HypChat
 from PIL import Image
 from twitter import Twitter, OAuth
 from selenium import webdriver
@@ -41,7 +42,7 @@ def fetch_tweets(username):
         )
     )
 
-    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=80)
+    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=30)
 
     # from pprint import pprint
     # print tweets
@@ -68,6 +69,31 @@ def fetch_tweets(username):
                         cropped.save('previews/%s_cropped.png' % tweet['id'])
                 else:
                     print '%s already exits. Skipping.' % filename
+
+@task
+def fetch_hipchat_logs(room):
+    """
+    Get hipchat logs of a room
+    """
+
+    secrets = app_config.get_secrets()
+
+    hipchat_api = HypChat(secrets['HIPCHAT_API_OAUTH_TOKEN']) 
+
+    room_data_dict = hipchat_api.get_room(room)
+
+    room_id = room_data_dict['id']
+
+    chat_history = list(hipchat_api.get_room(room_id).history().contents())
+
+    # print chat_history
+
+    from pprint import pprint
+    
+    for message in chat_history:
+
+        if 'message_links' in message:
+            print message
 
 @task
 def update_featured_social():
