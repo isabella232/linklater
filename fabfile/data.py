@@ -6,6 +6,7 @@ Commands that update or process the application data.
 from datetime import datetime
 import json
 
+from bs4 import BeautifulSoup
 from fabric.api import task
 from facebook import GraphAPI
 from hypchat import HypChat
@@ -66,13 +67,37 @@ def _grab_url(url):
     # Get the URL
     resp = requests.get(url)
 
+    data = {}
 
-    if resp.headers.get('content-type').startswith('text/html'):
+    from pprint import pprint as pp
+    if resp.status_code = 200 and resp.headers.get('content-type').startswith('text/html'):
         real_url = resp.url
+        soup = BeautifulSoup(resp.content)
+
+        og_title = soup.find(attrs={'property':'og:title'})
+        if og_title:
+            data['title'] = og_title.attrs.get('content')
+        else:
+            import ipdb; ipdb.set_trace();
+            print ""
+
+        #meta_tags = soup.find_all('meta')
+        #for tag in meta_tags:
+            #pp(tag)
+            #if tag.property == 'og:title':
+                #data['title'] = tag.content
+            #if tag.property == 'og:image':
+                #data['image_url'] = tag.content
+            #if tag.property == 'og:description':
+                #data['description'] = tag.content
+
+
         #print "HTMLizle %s" % url
     else:
         print "not html %s" % url
-        import ipdb; ipdb.set_trace();
+
+    pp(data)
+    print "\n"
 
     # Is content type text/html?
     #   Are og: tags present?
