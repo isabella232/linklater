@@ -45,12 +45,20 @@ def fetch_tweets(username):
 
     tweets = twitter_api.statuses.user_timeline(screen_name=username, count=30)
 
+    out = []
+
     for tweet in tweets:
-        tweet_text = tweet['text']
         urls = tweet['entities']['urls']
 
         for url in urls:
             row = _grab_url(url['expanded_url'])
+            if row:
+                row['tweet_text'] = tweet['text']
+                out.append(row)
+
+    print out
+    return out
+
 
 def _grab_url(url):
     """
@@ -64,97 +72,26 @@ def _grab_url(url):
         'tweet_text': <TWEET_text>,
     }
     """
+    data = None
 
-    data = {}    
-
-    # Get the URL
     resp = requests.get(url)
 
-
-    from pprint import pprint as pp
-
     if resp.status_code == 200 and resp.headers.get('content-type').startswith('text/html'):
+        data = {}
         real_url = resp.url
         soup = BeautifulSoup(resp.content)
 
         og_tags = ('image', 'title', 'description')
 
         for og_tag in og_tags:
-            print soup.find(attrs={'property':'og:%s'} % og_tag)
- 
+            match = soup.find(attrs={'property': 'og:%s' % og_tag})
+            if match and match.attrs.get('content'):
+                data[og_tag] = match.attrs.get('content')
 
+    else:
+        print "There was an error accessing %s (%s)" % (url, resp.status_code)
 
-        # og_title = soup.find(attrs={'property':'og:title'})
-        # if og_title:
-        #     data['title'] = og_title.attrs.get('content')
-        # else:
-        #     import ipdb; ipdb.set_trace();
-        #     print ""
-
-        # og_description = soup.find(attrs={'property':'og:description'})
-        # if og_description:
-        #     data['description'] = og_description.attrs.get('content')
-
-        # og_image = soup.find(attrs={'property':'og:image'})
-        # if og_image:
-        #     data['image_url'] = og_image.attrs.get('content')
-
-
-        #meta_tags = soup.find_all('meta')
-        #for tag in meta_tags:
-            #pp(tag)
-            #if tag.property == 'og:title':
-                #data['title'] = tag.content
-            #if tag.property == 'og:image':
-                #data['image_url'] = tag.content
-            #if tag.property == 'og:description':
-                #data['description'] = tag.content
-
-
-        #print "HTMLizle %s" % url
-    # else:
-    #     print "not html %s" % url
-
-    pp(data)
-    print "\n"
-
-    # Is content type text/html?
-    #   Are og: tags present?
-    #      Get metadata from og tags
-    #   Otherwise:
-    #      Get metadata from <title> tag and meta description
-    #      Screenshot
-    #
-    # Is the content type image?
-    #   Link! (with img tag)
-    # 
-    # Is the content type something else?
-    #   Link! (with href)
-
-
-
-
-    # from pprint import pprint
-    # print tweets
-
-    #file_extensions = ('gif', 'png', 'jpg', 'jpeg')
-    #driver = webdriver.PhantomJS()
-    #driver.set_window_size(1200, 800)
-
-                #filename = 'previews/%s.png' % tweet['id']
-                #original_url = url['expanded_url'].encode('ascii', 'ignore')   
-
-                #if not os.path.isfile(filename):
-                    #if original_url.endswith(file_extensions):
-                        #urllib.urlretrieve(original_url, filename)
-                    #else: 
-                        #driver.get(original_url)
-                        #driver.get_screenshot_as_file(filename)
-                        #screenshot = Image.open(filename)
-                        #cropped = screenshot.crop((0, 0, 1200, 800))
-                        #cropped.save('previews/%s_cropped.png' % tweet['id'])
-                #else:
-                    #print '%s already exits. Skipping.' % filename
+    return data
 
 @task
 def fetch_hipchat_logs(room):
