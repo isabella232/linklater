@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 
 from bs4 import BeautifulSoup
+from flask import render_template
 from fabric.api import task
 from facebook import GraphAPI
 from hypchat import HypChat
@@ -14,11 +15,14 @@ from PIL import Image
 from twitter import Twitter, OAuth
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
+from jinja2 import Environment, FileSystemLoader
 
 import app_config
 import copytext
 import os
 import requests
+
+env = Environment(loader=FileSystemLoader('templates'))
 
 @task(default=True)
 def update():
@@ -26,6 +30,14 @@ def update():
     Stub function for updating app-specific data.
     """
     #update_featured_social()
+
+
+@task
+def make_draft_html():
+    links = fetch_tweets('lookatthisstory')
+    template = env.get_template('tumblr.html')
+    output = template.render(links=links)
+    print output
 
 @task
 def fetch_tweets(username):
@@ -56,42 +68,56 @@ def fetch_tweets(username):
                 row['tweet_text'] = tweet['text']
                 out.append(row)
 
-    print out
-    return out
+    out = _dedupe_links(out)
 
+    return out
 
 def _grab_url(url):
     """
     Returns data of the form:
-
     {
         'title': <TITLE>,
         'description': <DESCRIPTION>,
         'type': <page/image/download>,
         'image_url': <IMAGE_URL>,
-        'tweet_text': <TWEET_text>,
     }
     """
     data = None
 
     resp = requests.get(url)
+    real_url = resp.url
 
     if resp.status_code == 200 and resp.headers.get('content-type').startswith('text/html'):
         data = {}
-        real_url = resp.url
+        data['url'] = real_url
+
         soup = BeautifulSoup(resp.content)
 
         og_tags = ('image', 'title', 'description')
-
         for og_tag in og_tags:
             match = soup.find(attrs={'property': 'og:%s' % og_tag})
             if match and match.attrs.get('content'):
                 data[og_tag] = match.attrs.get('content')
 
     else:
-        print "There was an error accessing %s (%s)" % (url, resp.status_code)
+        print "There was an error accessing %s (%s)" % (real_url, resp.status_code)
 
     return data
+
+def _dedupe_links(links):
+    """
+    Get rid of duplicate URLs
+    """
+    out = []
+    urls_seen = []
+    for link in links:
+        if link['url'] not in urls_seen:
+            urls_seen.append(link['url'])
+            out.append(link)
+        else:
+            print "%s is a duplicate, skipping" % link['url']
+
+    return out
 
 @task
 def fetch_hipchat_logs(room):
