@@ -1,6 +1,21 @@
 {% for link in links %}
 <p>
-<strong><a href="{{ link.url }}">{{ link.title }}</a></strong> - {{ link.tweet_text }} ({{ link.description }})
+	{% if link.image %}
+	<img src="{{ link.image }}">
+	{% endif %}
+	<br>
+	<a href="{{ link.url }}">{{ link.url }}</a>
+	<br>
+	<strong>{{ link.title }}</strong>	
+	<br>
+
+	{{ link.description }}
+
+	{% if link.tweeted_by %}
+	(via <a href="{{ link.tweet_url }}">@{{ link.tweeted_by }}</a>)
+	{% else %}
+	(<a href="{{ link.tweet_url }}">#</a>)
+	{% endif %}
 </p>
 {% endfor %}
 

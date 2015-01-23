@@ -11,6 +11,7 @@ import assets
 import data
 import flat
 import issues
+import pytumblr
 import render
 import text
 import utils
@@ -32,6 +33,7 @@ env.user = app_config.SERVER_USER
 env.forward_agent = True
 
 env.hosts = []
+env.tumblr_blog_name = 'stage-lookatthis'
 env.settings = None
 
 """
@@ -49,6 +51,7 @@ def production():
     env.settings = 'production'
     app_config.configure_targets(env.settings)
     env.hosts = app_config.SERVERS
+    env.tumblr_blog_name = 'lookatthis'
 
 @task
 def staging():
@@ -171,6 +174,21 @@ def deploy(remote='origin'):
         max_age=app_config.ASSETS_MAX_AGE
     )
 
+@task
+def deploy_to_tumblr():
+    secrets = app_config.get_secrets()    
+    tumblr_api = pytumblr.TumblrRestClient(
+            secrets['TUMBLR_CONSUMER_KEY'],
+            secrets['TUMBLR_CONSUMER_SECRET'],
+            secrets['TUMBLR_TOKEN'],
+            secrets['TUMBLR_TOKEN_SECRET']
+        )
+
+    body = data.make_draft_html()
+
+    response = tumblr_api.create_text(env.tumblr_blog_name, state='draft', format='html', body=body.encode('utf8'))
+
+    print 'Tumblr draft created! Edit it at http://%s.tumblr.com/edit/%s' % (env.tumblr_blog_name, response['id'])
 
 """
 Destruction
