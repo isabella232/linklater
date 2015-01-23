@@ -31,13 +31,12 @@ def update():
     """
     #update_featured_social()
 
-
 @task
 def make_draft_html():
     links = fetch_tweets('lookatthisstory')
     template = env.get_template('tumblr.html')
     output = template.render(links=links)
-    print output
+    return output
 
 @task
 def fetch_tweets(username):
@@ -61,12 +60,18 @@ def fetch_tweets(username):
 
     for tweet in tweets:
         urls = tweet['entities']['urls']
-
         for url in urls:
-            row = _grab_url(url['expanded_url'])
+            if not url['display_url'].startswith('pic.twitter.com'):
+                row = _grab_url(url['expanded_url'])
             if row:
                 row['tweet_text'] = tweet['text']
-                out.append(row)
+                if tweet.get('retweeted_status'):
+                    row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (tweet['retweeted_status']['user']['screen_name'], tweet['id'])
+                    row['tweeted_by'] = tweet['retweeted_status']['user']['screen_name']
+                    out.append(row)  
+                else:
+                    row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
+                    out.append(row)
 
     out = _dedupe_links(out)
 
@@ -79,7 +84,10 @@ def _grab_url(url):
         'title': <TITLE>,
         'description': <DESCRIPTION>,
         'type': <page/image/download>,
-        'image_url': <IMAGE_URL>,
+        'image': <IMAGE_URL>,
+        'tweet_url': <TWEET_URL>.
+        'tweet_text': <TWEET_TEXT>,
+        'tweeted_by': <USERNAME>
     }
     """
     data = None
