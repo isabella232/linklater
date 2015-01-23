@@ -46,6 +46,7 @@ def fetch_tweets(username):
     tweets = twitter_api.statuses.user_timeline(screen_name=username, count=30)
 
     for tweet in tweets:
+        tweet_text = tweet['text']
         urls = tweet['entities']['urls']
 
         for url in urls:
@@ -60,26 +61,44 @@ def _grab_url(url):
         'description': <DESCRIPTION>,
         'type': <page/image/download>,
         'image_url': <IMAGE_URL>,
-        'twitter_text': <TWITTER_TEXT>,
+        'tweet_text': <TWEET_text>,
     }
     """
+
+    data = {}    
 
     # Get the URL
     resp = requests.get(url)
 
-    data = {}
 
     from pprint import pprint as pp
-    if resp.status_code = 200 and resp.headers.get('content-type').startswith('text/html'):
+
+    if resp.status_code == 200 and resp.headers.get('content-type').startswith('text/html'):
         real_url = resp.url
         soup = BeautifulSoup(resp.content)
 
-        og_title = soup.find(attrs={'property':'og:title'})
-        if og_title:
-            data['title'] = og_title.attrs.get('content')
-        else:
-            import ipdb; ipdb.set_trace();
-            print ""
+        og_tags = ('image', 'title', 'description')
+
+        for og_tag in og_tags:
+            print soup.find(attrs={'property':'og:%s'} % og_tag)
+ 
+
+
+        # og_title = soup.find(attrs={'property':'og:title'})
+        # if og_title:
+        #     data['title'] = og_title.attrs.get('content')
+        # else:
+        #     import ipdb; ipdb.set_trace();
+        #     print ""
+
+        # og_description = soup.find(attrs={'property':'og:description'})
+        # if og_description:
+        #     data['description'] = og_description.attrs.get('content')
+
+        # og_image = soup.find(attrs={'property':'og:image'})
+        # if og_image:
+        #     data['image_url'] = og_image.attrs.get('content')
+
 
         #meta_tags = soup.find_all('meta')
         #for tag in meta_tags:
@@ -93,8 +112,8 @@ def _grab_url(url):
 
 
         #print "HTMLizle %s" % url
-    else:
-        print "not html %s" % url
+    # else:
+    #     print "not html %s" % url
 
     pp(data)
     print "\n"
