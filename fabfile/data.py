@@ -17,7 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 import app_config
 import copytext
 import os
-import urllib
+import requests
 
 @task(default=True)
 def update():
@@ -44,31 +44,73 @@ def fetch_tweets(username):
 
     tweets = twitter_api.statuses.user_timeline(screen_name=username, count=30)
 
+    for tweet in tweets:
+        urls = tweet['entities']['urls']
+
+        for url in urls:
+            row = _grab_url(url['expanded_url'])
+
+def _grab_url(url):
+    """
+    Returns data of the form:
+
+    {
+        'title': <TITLE>,
+        'description': <DESCRIPTION>,
+        'type': <page/image/download>,
+        'image_url': <IMAGE_URL>,
+        'twitter_text': <TWITTER_TEXT>,
+    }
+    """
+
+    # Get the URL
+    resp = requests.get(url)
+
+
+    if resp.headers.get('content-type').startswith('text/html'):
+        real_url = resp.url
+        #print "HTMLizle %s" % url
+    else:
+        print "not html %s" % url
+        import ipdb; ipdb.set_trace();
+
+    # Is content type text/html?
+    #   Are og: tags present?
+    #      Get metadata from og tags
+    #   Otherwise:
+    #      Get metadata from <title> tag and meta description
+    #      Screenshot
+    #
+    # Is the content type image?
+    #   Link! (with img tag)
+    # 
+    # Is the content type something else?
+    #   Link! (with href)
+
+
+
+
     # from pprint import pprint
     # print tweets
 
-    file_extensions = ['gif', 'png', 'jpg', 'jpeg']
-    driver = webdriver.PhantomJS()
+    #file_extensions = ('gif', 'png', 'jpg', 'jpeg')
+    #driver = webdriver.PhantomJS()
+    #driver.set_window_size(1200, 800)
 
-    for tweet in tweets:
-        urls = tweet['entities']['urls']   
+                #filename = 'previews/%s.png' % tweet['id']
+                #original_url = url['expanded_url'].encode('ascii', 'ignore')   
 
-        if len(urls) > 0:
-            for url in urls:
-                filename = 'previews/%s.png' % tweet['id']
-                original_url = url['expanded_url'].encode('ascii', 'ignore')   
-
-                if not os.path.isfile(filename):
-                    if original_url.endswith(tuple(file_extensions)):
-                        urllib.urlretrieve(original_url, filename)
-                    else: 
-                        driver.get(original_url)
-                        driver.get_screenshot_as_file(filename)
-                        screenshot = Image.open(filename)
-                        cropped = screenshot.crop((0, 0, 1200, 800))
-                        cropped.save('previews/%s_cropped.png' % tweet['id'])
-                else:
-                    print '%s already exits. Skipping.' % filename
+                #if not os.path.isfile(filename):
+                    #if original_url.endswith(file_extensions):
+                        #urllib.urlretrieve(original_url, filename)
+                    #else: 
+                        #driver.get(original_url)
+                        #driver.get_screenshot_as_file(filename)
+                        #screenshot = Image.open(filename)
+                        #cropped = screenshot.crop((0, 0, 1200, 800))
+                        #cropped.save('previews/%s_cropped.png' % tweet['id'])
+                #else:
+                    #print '%s already exits. Skipping.' % filename
 
 @task
 def fetch_hipchat_logs(room):
