@@ -23,6 +23,7 @@ import os
 import requests
 
 env = Environment(loader=FileSystemLoader('templates'))
+current_time = datetime.now()
 
 @task(default=True)
 def update():
@@ -59,6 +60,13 @@ def fetch_tweets(username):
     out = []
 
     for tweet in tweets:
+
+        created_time_raw = tweet['created_at']
+
+        created_time = datetime.strptime(created_time_raw, '%a %b %d %H:%M:%S +0000 %Y')
+
+        print current_time - created_time
+
         urls = tweet['entities']['urls']
         for url in urls:
             if not url['display_url'].startswith('pic.twitter.com'):
