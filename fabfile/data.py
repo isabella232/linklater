@@ -9,6 +9,7 @@ import json
 from bs4 import BeautifulSoup
 from flask import render_template
 from fabric.api import task
+from fabric.state import env
 from facebook import GraphAPI
 from hypchat import HypChat
 from pprint import pprint
@@ -35,7 +36,7 @@ def update():
 
 @task
 def make_tumblr_draft_html():
-    links = fetch_tweets('lookatthisstory', 15)
+    links = fetch_tweets(env.twitter_handle, env.twitter_timeframe)
     template = jinja_env.get_template('tumblr.html')
     output = template.render(links=links)
     return output

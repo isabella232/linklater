@@ -36,10 +36,14 @@ Base configuration
 """
 env.user = app_config.SERVER_USER
 env.forward_agent = True
-
 env.hosts = []
-env.tumblr_blog_name = 'stage-lookatthis'
 env.settings = None
+
+env.tumblr_blog_name = 'stage-lookatthis'
+env.twitter_handle = 'lookatthisstory'
+env.twitter_timeframe = '10' # days
+env.from_email_address = 'sson@npr.org'
+env.to_email_address = 'sson@npr.org'
 
 """
 Environments
@@ -189,6 +193,8 @@ def linklater():
     template = jinja_env.get_template('email.txt')
 
     context = {
+        'from': env.from_email_address,
+        'to': env.to_email_address,
         'blog_name': env.tumblr_blog_name,
         'tumblr_post_id': response['id']
     }
