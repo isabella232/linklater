@@ -24,7 +24,6 @@ import os
 import requests
 
 env = Environment(loader=FileSystemLoader('templates'))
-current_time = datetime.now()
 
 @task(default=True)
 def update():
@@ -45,6 +44,8 @@ def fetch_tweets(username, days):
     """
     Get tweets of a specific user
     """
+    current_time = datetime.now()    
+
     secrets = app_config.get_secrets()
 
     twitter_api = Twitter(
@@ -56,14 +57,21 @@ def fetch_tweets(username, days):
         )
     )
 
-    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=200)
+    out = []    
 
-    out = []
+    count_offset = 200    
 
-    for tweet in tweets:
+    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=count_offset)
+
+    i = 0
+
+    while True:
+
+        tweet = tweets[i]
+
+        tweet_id = tweet['id']
 
         created_time_raw = tweet['created_at']
-
         created_time = datetime.strptime(created_time_raw, '%a %b %d %H:%M:%S +0000 %Y')
 
         time_difference = (current_time - created_time).days
@@ -83,7 +91,15 @@ def fetch_tweets(username, days):
                     out.append(row)  
                 else:
                     row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
-                    out.append(row)                
+                    out.append(row)  
+
+        i += 1
+
+        if i > count_offset:
+            tweets.append(twitter_api.statuses.user_timeline(screen_name=username, count=count_offset, max_id=tweet_id))
+
+        if i > len(tweets):
+            break
 
     out = _dedupe_links(out)
 
