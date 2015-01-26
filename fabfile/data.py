@@ -11,6 +11,7 @@ from flask import render_template
 from fabric.api import task
 from facebook import GraphAPI
 from hypchat import HypChat
+from pprint import pprint
 from PIL import Image
 from twitter import Twitter, OAuth
 from selenium import webdriver
@@ -55,7 +56,7 @@ def fetch_tweets(username, days):
         )
     )
 
-    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=30)
+    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=200)
 
     out = []
 
@@ -68,7 +69,7 @@ def fetch_tweets(username, days):
         time_difference = (current_time - created_time).days
 
         if time_difference > int(days):
-            break
+            break     
 
         urls = tweet['entities']['urls']
         for url in urls:
@@ -82,7 +83,7 @@ def fetch_tweets(username, days):
                     out.append(row)  
                 else:
                     row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
-                    out.append(row)                    
+                    out.append(row)                
 
     out = _dedupe_links(out)
 
