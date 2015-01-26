@@ -2,4 +2,4 @@ From: <sson@npr.org>
 To:	<sson@npr.org>
 Subject: Hello there!
 
-Message goes here.
+Tumblr draft created! Edit it at http://{{ blog_name }}.tumblr.com/edit/{{ tumblr_post_id }}.

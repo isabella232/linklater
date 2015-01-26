@@ -7,7 +7,6 @@ from datetime import datetime
 import json
 
 from bs4 import BeautifulSoup
-from email.parser import Parser
 from flask import render_template
 from fabric.api import task
 from facebook import GraphAPI
@@ -23,9 +22,8 @@ import app_config
 import copytext
 import os
 import requests
-import smtplib
 
-env = Environment(loader=FileSystemLoader('templates'))
+jinja_env = Environment(loader=FileSystemLoader('templates'))
 TWITTER_BATCH_SIZE = 200   
 
 @task(default=True)
@@ -36,28 +34,11 @@ def update():
     #update_featured_social()
 
 @task
-def make_draft_html():
-    links = fetch_tweets('lookatthisstory')
-    template = env.get_template('tumblr.html')
+def make_tumblr_draft_html():
+    links = fetch_tweets('lookatthisstory', 15)
+    template = jinja_env.get_template('tumblr.html')
     output = template.render(links=links)
     return output
-
-@task
-def send_notification_email():
-    """
-    Alerts recipients when Tumblr draft with links scraped from Twitter via fetch_tweets() is available.
-    """
-    template = env.get_template('email.txt')
-
-    output = template.render()
-
-    headers = Parser().parsestr(output)
-    FROM = headers['from']
-    TO = headers['to']
-
-    server = smtplib.SMTP('mail.npr.org')
-    server.sendmail(FROM, TO, output)
-    server.quit()
 
 @task
 def fetch_tweets(username, days):

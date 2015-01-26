@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+from email.parser import Parser
 from fabric.api import local, require, settings, task
 from fabric.state import env
+from jinja2 import Environment, FileSystemLoader
 from termcolor import colored
 
 import app_config
@@ -13,6 +15,7 @@ import flat
 import issues
 import pytumblr
 import render
+import smtplib
 import text
 import utils
 
@@ -25,6 +28,8 @@ if app_config.DEPLOY_CRONTAB:
 # Bootstrap can only be run once, then it's disabled
 if app_config.PROJECT_SLUG == '$NEW_PROJECT_SLUG':
     import bootstrap
+
+jinja_env = Environment(loader=FileSystemLoader('templates'))
 
 """
 Base configuration
@@ -175,6 +180,30 @@ def deploy(remote='origin'):
     )
 
 @task
+def send_notification_email():
+    """
+    Alerts recipients when Tumblr draft with links scraped from Twitter via fetch_tweets() is available.
+    """
+    response = deploy_to_tumblr()
+
+    template = jinja_env.get_template('email.txt')
+
+    context = {
+        'blog_name': env.tumblr_blog_name,
+        'tumblr_post_id': response['id']
+    }
+
+    output = template.render(**context)
+
+    headers = Parser().parsestr(output)
+    FROM = headers['from']
+    TO = headers['to']
+
+    server = smtplib.SMTP('mail.npr.org')
+    server.sendmail(FROM, TO, output)
+    server.quit()
+
+@task
 def deploy_to_tumblr():
     secrets = app_config.get_secrets()    
     tumblr_api = pytumblr.TumblrRestClient(
@@ -184,11 +213,11 @@ def deploy_to_tumblr():
             secrets['TUMBLR_TOKEN_SECRET']
         )
 
-    body = data.make_draft_html()
+    body = data.make_tumblr_draft_html()
 
     response = tumblr_api.create_text(env.tumblr_blog_name, state='draft', format='html', body=body.encode('utf8'))
 
-    print 'Tumblr draft created! Edit it at http://%s.tumblr.com/edit/%s' % (env.tumblr_blog_name, response['id'])
+    return response
 
 """
 Destruction
