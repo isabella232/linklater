@@ -26,6 +26,7 @@ import requests
 import smtplib
 
 env = Environment(loader=FileSystemLoader('templates'))
+TWITTER_BATCH_SIZE = 200   
 
 @task(default=True)
 def update():
@@ -78,13 +79,14 @@ def fetch_tweets(username, days):
 
     out = []    
 
-    count_offset = 200    
-
-    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=count_offset)
+    tweets = twitter_api.statuses.user_timeline(screen_name=username, count=TWITTER_BATCH_SIZE)
 
     i = 0
 
     while True:
+        print 'looooooop'
+        if i > (len(tweets)-1):
+            break   
 
         tweet = tweets[i]
 
@@ -101,24 +103,24 @@ def fetch_tweets(username, days):
         urls = tweet['entities']['urls']
         for url in urls:
             if not url['display_url'].startswith('pic.twitter.com'):
-                row = _grab_url(url['expanded_url'])
-            if row:
-                row['tweet_text'] = tweet['text']
-                if tweet.get('retweeted_status'):
-                    row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (tweet['retweeted_status']['user']['screen_name'], tweet['id'])
-                    row['tweeted_by'] = tweet['retweeted_status']['user']['screen_name']
-                    out.append(row)  
-                else:
-                    row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
-                    out.append(row)  
+                print url['expanded_url']
+                # row = _grab_url(url['expanded_url'])
+                row = None
+                if row:
+                    row['tweet_text'] = tweet['text']
+                    if tweet.get('retweeted_status'):
+                        row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (tweet['retweeted_status']['user']['screen_name'], tweet['id'])
+                        row['tweeted_by'] = tweet['retweeted_status']['user']['screen_name']
+                        out.append(row)  
+                    else:
+                        row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
+                        out.append(row)  
 
         i += 1
 
-        if i > count_offset:
-            tweets.append(twitter_api.statuses.user_timeline(screen_name=username, count=count_offset, max_id=tweet_id))
-
-        if i > len(tweets):
-            break
+        if i > (TWITTER_BATCH_SIZE-1):
+            tweets = twitter_api.statuses.user_timeline(screen_name=username, count=TWITTER_BATCH_SIZE, max_id=tweet_id)
+            i = 0
 
     out = _dedupe_links(out)
 
@@ -139,7 +141,12 @@ def _grab_url(url):
     """
     data = None
 
-    resp = requests.get(url)
+    try:
+        resp = requests.get(url, timeout=5)
+    except requests.exceptions.Timeout:
+        print '%s timed out.' % url
+        return None
+
     real_url = resp.url
 
     if resp.status_code == 200 and resp.headers.get('content-type').startswith('text/html'):
