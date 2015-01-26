@@ -180,7 +180,7 @@ def deploy(remote='origin'):
     )
 
 @task
-def send_notification_email():
+def linklater():
     """
     Alerts recipients when Tumblr draft with links scraped from Twitter via fetch_tweets() is available.
     """
