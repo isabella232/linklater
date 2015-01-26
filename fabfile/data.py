@@ -40,7 +40,7 @@ def make_draft_html():
     return output
 
 @task
-def fetch_tweets(username):
+def fetch_tweets(username, days):
     """
     Get tweets of a specific user
     """
@@ -65,7 +65,10 @@ def fetch_tweets(username):
 
         created_time = datetime.strptime(created_time_raw, '%a %b %d %H:%M:%S +0000 %Y')
 
-        print current_time - created_time
+        time_difference = (current_time - created_time).days
+
+        if time_difference > int(days):
+            break
 
         urls = tweet['entities']['urls']
         for url in urls:
@@ -79,7 +82,7 @@ def fetch_tweets(username):
                     out.append(row)  
                 else:
                     row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
-                    out.append(row)
+                    out.append(row)                    
 
     out = _dedupe_links(out)
 
