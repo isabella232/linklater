@@ -84,47 +84,51 @@ def fetch_tweets(username, days):
     i = 0
 
     while True:
-        print 'looooooop'
         if i > (len(tweets)-1):
             break   
 
         tweet = tweets[i]
 
-        tweet_id = tweet['id']
-
-        created_time_raw = tweet['created_at']
-        created_time = datetime.strptime(created_time_raw, '%a %b %d %H:%M:%S +0000 %Y')
+        created_time = datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
 
         time_difference = (current_time - created_time).days
 
         if time_difference > int(days):
             break     
 
-        urls = tweet['entities']['urls']
-        for url in urls:
-            if not url['display_url'].startswith('pic.twitter.com'):
-                print url['expanded_url']
-                # row = _grab_url(url['expanded_url'])
-                row = None
-                if row:
-                    row['tweet_text'] = tweet['text']
-                    if tweet.get('retweeted_status'):
-                        row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (tweet['retweeted_status']['user']['screen_name'], tweet['id'])
-                        row['tweeted_by'] = tweet['retweeted_status']['user']['screen_name']
-                        out.append(row)  
-                    else:
-                        row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
-                        out.append(row)  
+        out.extend(_process_tweet(tweet, username))
 
         i += 1
 
         if i > (TWITTER_BATCH_SIZE-1):
-            tweets = twitter_api.statuses.user_timeline(screen_name=username, count=TWITTER_BATCH_SIZE, max_id=tweet_id)
+            tweets = twitter_api.statuses.user_timeline(screen_name=username, count=TWITTER_BATCH_SIZE, max_id=tweet['id'])
             i = 0
 
     out = _dedupe_links(out)
 
     return out
+
+def _process_tweet(tweet, username):
+
+    out = []
+
+    for url in tweet['entities']['urls']:
+
+        if url['display_url'].startswith('pic.twitter.com'):
+            continue
+
+        row = _grab_url(url['expanded_url'])
+        if row:
+            row['tweet_text'] = tweet['text']
+            if tweet.get('retweeted_status'):
+                row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (tweet['retweeted_status']['user']['screen_name'], tweet['id'])
+                row['tweeted_by'] = tweet['retweeted_status']['user']['screen_name']
+                out.append(row)  
+            else:
+                row['tweet_url'] = 'http://twitter.com/%s/status/%s' % (username, tweet['id'])
+                out.append(row) 
+
+    return out 
 
 def _grab_url(url):
     """
@@ -198,8 +202,6 @@ def fetch_hipchat_logs(room):
     chat_history = list(hipchat_api.get_room(room_id).history().contents())
 
     # print chat_history
-
-    from pprint import pprint
     
     for message in chat_history:
 
