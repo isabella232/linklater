@@ -45,7 +45,7 @@ env.tumblr_blog_name = 'stage-lookatthis'
 env.twitter_handle = 'lookatthisstory'
 env.twitter_timeframe = '7' # days
 env.from_email_address = 'NPR Visuals Linklater <nprapps@npr.org>'
-env.to_email_addresses = ['sson@npr.org', 'deads@npr.org']
+env.to_email_addresses = ['sson@npr.org']
 env.email_subject_template = 'Richard Linklater\'s links for %s'
 
 # Jinja env
@@ -183,6 +183,7 @@ def linklater():
         'tumblr_post_id': response['id'],
         'day_range': env.twitter_timeframe,
         'twitter_handle': env.twitter_handle,
+        'richard_picture': 'http://assets.apps.npr.org/linklater/hippie_linklater.jpg'
     }
 
     output = template.render(**context)
