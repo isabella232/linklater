@@ -1,5 +1,6 @@
-From: {{ from }}
-To:	{{ to }}
-Subject: Linklater, now.
+I've collected the links for the past {{ day_range }} days and made a
+Tumblr draft for you. Edit it at:
 
-Tumblr draft created! Edit it at http://{{ blog_name }}.tumblr.com/edit/{{ tumblr_post_id }}.
+http://{{ blog_name }}.tumblr.com/edit/{{ tumblr_post_id }}
+
+<3 Richard

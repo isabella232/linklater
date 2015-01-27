@@ -5,11 +5,13 @@ from fabric.api import local, require, settings, task
 from fabric.state import env
 from jinja2 import Environment, FileSystemLoader
 from termcolor import colored
+from datetime import datetime
 
 import app_config
 
 # Other fabfiles
 import assets
+import boto.ses
 import data
 import flat
 import issues
@@ -42,8 +44,9 @@ env.settings = None
 env.tumblr_blog_name = 'stage-lookatthis'
 env.twitter_handle = 'lookatthisstory'
 env.twitter_timeframe = '10' # days
-env.from_email_address = 'sson@npr.org'
-env.to_email_address = 'sson@npr.org'
+env.from_email_address = 'NPR Visuals Linklater <nprapps@npr.org>'
+env.to_email_addresses = ['sson@npr.org', 'deads@npr.org']
+env.email_subject_template = 'Richard Linklater\'s links for %s'
 
 """
 Environments
@@ -193,21 +196,25 @@ def linklater():
     template = jinja_env.get_template('email.txt')
 
     context = {
-        'from': env.from_email_address,
-        'to': env.to_email_address,
         'blog_name': env.tumblr_blog_name,
-        'tumblr_post_id': response['id']
+        'tumblr_post_id': response['id'],
+        'day_range': env.twitter_timeframe
     }
 
     output = template.render(**context)
 
-    headers = Parser().parsestr(output)
-    FROM = headers['from']
-    TO = headers['to']
+    now = datetime.now().strftime('%a, %b %d %Y')
+    subject = env.email_subject_template % now
 
-    server = smtplib.SMTP('mail.npr.org')
-    server.sendmail(FROM, TO, output)
-    server.quit()
+    connection = boto.ses.connect_to_region('us-east-1')
+
+    connection.send_email(
+        source=env.from_email_address,
+        subject=subject,
+        body=None,
+        html_body=output,
+        to_addresses=env.to_email_addresses
+    )
 
 @task
 def deploy_to_tumblr():
