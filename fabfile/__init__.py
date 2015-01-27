@@ -171,6 +171,9 @@ def linklater():
     """
     Alerts recipients when Tumblr draft with links scraped from Twitter via fetch_tweets() is available.
     """
+    now = datetime.now().strftime('%a, %b %d %Y')
+    print "%s: Running linklater" % now
+
     response = deploy_to_tumblr()
 
     template = env.jinja_env.get_template('notification_email.html')
@@ -184,7 +187,6 @@ def linklater():
 
     output = template.render(**context)
 
-    now = datetime.now().strftime('%a, %b %d %Y')
     subject = env.email_subject_template % now
 
     connection = boto.ses.connect_to_region('us-east-1')
