@@ -162,34 +162,9 @@ def deploy(remote='origin'):
 
         servers.checkout_latest(remote)
 
-        servers.fabcast('text.update')
         servers.fabcast('assets.sync')
-        servers.fabcast('data.update')
 
-        if app_config.DEPLOY_CRONTAB:
-            servers.install_crontab()
-
-        if app_config.DEPLOY_SERVICES:
-            servers.deploy_confs()
-
-    update()
-    render.render_all()
-
-    # Clear files that should never be deployed
-    local('rm -rf www/live-data')
-
-    flat.deploy_folder(
-        'www',
-        app_config.PROJECT_SLUG,
-        max_age=app_config.DEFAULT_MAX_AGE,
-        ignore=['www/assets/*']
-    )
-
-    flat.deploy_folder(
-        'www/assets',
-        '%s/assets' % app_config.PROJECT_SLUG,
-        max_age=app_config.ASSETS_MAX_AGE
-    )
+        servers.install_crontab()
 
 @task
 def linklater():
