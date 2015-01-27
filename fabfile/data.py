@@ -24,7 +24,6 @@ import copytext
 import os
 import requests
 
-jinja_env = Environment(loader=FileSystemLoader('templates'))
 TWITTER_BATCH_SIZE = 200   
 
 @task(default=True)
@@ -37,7 +36,7 @@ def update():
 @task
 def make_tumblr_draft_html():
     links = fetch_tweets(env.twitter_handle, env.twitter_timeframe)
-    template = jinja_env.get_template('tumblr.html')
+    template = env.jinja_env.get_template('tumblr.html')
     output = template.render(links=links)
     return output
 

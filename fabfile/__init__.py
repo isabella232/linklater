@@ -15,6 +15,7 @@ import boto.ses
 import data
 import flat
 import issues
+import os
 import pytumblr
 import render
 import smtplib
@@ -31,7 +32,6 @@ if app_config.DEPLOY_CRONTAB:
 if app_config.PROJECT_SLUG == '$NEW_PROJECT_SLUG':
     import bootstrap
 
-jinja_env = Environment(loader=FileSystemLoader('templates'))
 
 """
 Base configuration
@@ -47,6 +47,11 @@ env.twitter_timeframe = '10' # days
 env.from_email_address = 'NPR Visuals Linklater <nprapps@npr.org>'
 env.to_email_addresses = ['sson@npr.org', 'deads@npr.org']
 env.email_subject_template = 'Richard Linklater\'s links for %s'
+
+# Jinja env
+fab_path = os.path.realpath(os.path.dirname(__file__))
+templates_path = os.path.join(fab_path, '../templates')
+env.jinja_env = Environment(loader=FileSystemLoader(templates_path))
 
 """
 Environments
@@ -193,12 +198,13 @@ def linklater():
     """
     response = deploy_to_tumblr()
 
-    template = jinja_env.get_template('email.txt')
+    template = env.jinja_env.get_template('notification_email.html')
 
     context = {
         'blog_name': env.tumblr_blog_name,
         'tumblr_post_id': response['id'],
-        'day_range': env.twitter_timeframe
+        'day_range': env.twitter_timeframe,
+        'twitter_handle': env.twitter_handle,
     }
 
     output = template.render(**context)
@@ -218,7 +224,7 @@ def linklater():
 
 @task
 def deploy_to_tumblr():
-    secrets = app_config.get_secrets()    
+    secrets = app_config.get_secrets()
     tumblr_api = pytumblr.TumblrRestClient(
             secrets['TUMBLR_CONSUMER_KEY'],
             secrets['TUMBLR_CONSUMER_SECRET'],
