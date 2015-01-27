@@ -171,8 +171,8 @@ def linklater():
     """
     Alerts recipients when Tumblr draft with links scraped from Twitter via fetch_tweets() is available.
     """
-    now = datetime.now().strftime('%a, %b %d %Y')
-    print "%s: Running linklater" % now
+    now = datetime.now()
+    print "%s: Running linklater" % now.isoformat()
 
     response = deploy_to_tumblr()
 
@@ -187,7 +187,7 @@ def linklater():
 
     output = template.render(**context)
 
-    subject = env.email_subject_template % now
+    subject = env.email_subject_template % now.strftime('%a, %b %d %Y')
 
     connection = boto.ses.connect_to_region('us-east-1')
 
