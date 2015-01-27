@@ -43,7 +43,7 @@ env.settings = None
 
 env.tumblr_blog_name = 'stage-lookatthis'
 env.twitter_handle = 'lookatthisstory'
-env.twitter_timeframe = '10' # days
+env.twitter_timeframe = '7' # days
 env.from_email_address = 'NPR Visuals Linklater <nprapps@npr.org>'
 env.to_email_addresses = ['sson@npr.org', 'deads@npr.org']
 env.email_subject_template = 'Richard Linklater\'s links for %s'
