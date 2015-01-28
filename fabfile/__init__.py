@@ -202,6 +202,7 @@ def linklater():
 
 @task
 def deploy_to_tumblr():
+    now = datetime.now()
     secrets = app_config.get_secrets()
     tumblr_api = pytumblr.TumblrRestClient(
             secrets['TUMBLR_CONSUMER_KEY'],
@@ -213,6 +214,7 @@ def deploy_to_tumblr():
     body = data.make_tumblr_draft_html()
 
     response = tumblr_api.create_text(env.tumblr_blog_name, state='draft', format='html', body=body.encode('utf8'))
+    print "%s: Created tumblr draft (id: %s)" % (now.isoformat(), response['id'])
 
     return response
 
