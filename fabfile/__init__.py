@@ -45,7 +45,8 @@ env.tumblr_blog_name = 'stage-lookatthis'
 env.twitter_handle = 'lookatthisstory'
 env.twitter_timeframe = '7' # days
 env.from_email_address = 'NPR Visuals Linklater <nprapps@npr.org>'
-env.to_email_addresses = ['sson@npr.org', 'deads@npr.org', 'coneill@npr.org']
+#env.to_email_addresses = ['sson@npr.org', 'deads@npr.org', 'coneill@npr.org']
+env.to_email_addresses = ['sson@npr.org', 'deads@npr.org', 'davideads@gmail.com']
 env.email_subject_template = 'Richard Linklater\'s links for %s'
 
 # Jinja env
@@ -192,13 +193,16 @@ def linklater():
 
     connection = boto.ses.connect_to_region('us-east-1')
 
-    connection.send_email(
-        source=env.from_email_address,
-        subject=subject,
-        body=None,
-        html_body=output,
-        to_addresses=env.to_email_addresses
-    )
+    try:
+        connection.send_email(
+            source=env.from_email_address,
+            subject=subject,
+            body=None,
+            html_body=output,
+            to_addresses=env.to_email_addresses
+        )
+    except boto.ses.exceptions.SESAddressNotVerifiedError as e:
+        print '%s: ERROR An email address has not been verified. Tried to send to %s' % (now.isoformat(), ', '.join(env.to_email_addresses))
 
 @task
 def deploy_to_tumblr():
