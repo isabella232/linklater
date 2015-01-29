@@ -192,16 +192,20 @@ def linklater():
 
     connection = boto.ses.connect_to_region('us-east-1')
 
-    connection.send_email(
-        source=env.from_email_address,
-        subject=subject,
-        body=None,
-        html_body=output,
-        to_addresses=env.to_email_addresses
-    )
+    try:
+        connection.send_email(
+            source=env.from_email_address,
+            subject=subject,
+            body=None,
+            html_body=output,
+            to_addresses=env.to_email_addresses
+        )
+    except boto.ses.exceptions.SESAddressNotVerifiedError as e:
+        print '%s: ERROR An email address has not been verified. Tried to send to %s' % (now.isoformat(), ', '.join(env.to_email_addresses))
 
 @task
 def deploy_to_tumblr():
+    now = datetime.now()
     secrets = app_config.get_secrets()
     tumblr_api = pytumblr.TumblrRestClient(
             secrets['TUMBLR_CONSUMER_KEY'],
@@ -213,6 +217,7 @@ def deploy_to_tumblr():
     body = data.make_tumblr_draft_html()
 
     response = tumblr_api.create_text(env.tumblr_blog_name, state='draft', format='html', body=body.encode('utf8'))
+    print "%s: Created tumblr draft (id: %s)" % (now.isoformat(), response['id'])
 
     return response
 
